@@ -1,0 +1,252 @@
+React Notes
+
+
+
+JSX stands for JavaScript XML. It allows us to write HTML code within
+JavaScript source code. We can write simple expressions in JSX by using
+curly braces:
+  let x = 1;
+  let y = 2;
+  const foo = (x) => { return 2 * x; };
+
+  {x + y} ==> 3
+  {`${x + y} equals 3`} ==> "3 equals 3"
+  {foo(3)} ==> 6
+  {foo} ==> (x) => { return 2 * x; }
+
+When returning JSX from component functions, use parenthesis to wrap the JSX
+if it takes up multiple lines:
+  return (
+    <div>
+      ...
+    </div>
+  );
+
+React components are functions that represent custom HTML elements. The basic
+form of a component is:
+  const MyComponent = (props) => {
+    // can be any HTML element or another React component
+    return <div>content</div>;
+  };
+
+Component functions must return only one "root" level element but can contain
+as many nested elements as desired.
+  const MyComponent = (props) => {
+    return (
+      <div>
+        <header>content</header>
+        <footer>content</footer>
+      </div>
+    );
+  };
+
+  * To avoid having so many nested div elements ("div soup"), use fragments:
+    const MyComponent = (props) => {
+      return (
+        <React.Fragment>
+          <header>content</header>
+          <footer>content</footer>
+        </React.Fragment>
+      );
+    };
+
+  * Alternatively, this could be used if our project is configured correctly:
+    const MyComponent = (props) => {
+      return (
+        <>
+          <header>content</header>
+          <footer>content</footer>
+        </>
+      );
+    };
+
+  * This is the equivalent of creating the custom component:
+    const Wrapper = (props) => {
+      return props.children;
+    };
+
+Once defined, components can be used like any other HTML element:
+  <MyComponent myProp1={expr1} myProp2={expr2}>
+    <div>content</div>
+    <MyOtherComponent />
+  </MyComponent>
+
+                      OR
+
+  <MyComponent myProp1={expr1} myProp2={expr2} />
+
+Attributes defined on components are passed as key value pairs in `props`.
+The `props` argument is a special object passed to components that contain
+attributes added to that component. In the above declaration, the props object
+would be:
+  props = {
+    myProp1: expr1,
+    myProp2: expr2
+  }
+
+The elements passed in-between the opening and closing tags of a component
+are contained in a special prop key called `children`:
+  const MyComponent = (props) => {
+    return <div className={props.className}>props.children</div>;
+  };
+
+  // somewhere else in code
+  <MyComponent className="someCSSClass">
+    <form>
+      <label>Some Label</label>
+      <input type="text" />
+    </form>
+  </MyComponent>
+
+  * The resulting actual DOM that would be rendered to the browser would be:
+  <div class="someCSSClass">
+    <form>
+      <label>Some Label</label>
+      <input type="text" />
+    </form>
+  </div>
+
+* Standard HTML attributes, such as the event listener onclick, onchange, etc,
+  are available in React in camel-case:
+    const myFunction = () => {};
+    <button  class="my-css-class" onclick="myfunction();></button>
+
+  The React equivalent would be:
+    import styles from 'path to css file';
+    const Button = (props) => {
+      const myFunction = (event) => {props.onClick()};
+      return (
+        <button className={styles['my-css-class']}
+          onClick={myFunction}>
+        </button>;
+      )};
+
+* The `class` attribute that specifies a CSS class on an element should be
+  typed as `className` instead because `class` is a reserved JavaScript
+  keyword.
+
+*** props are used to pass data from parent component to child component ***
+
+To pass data from child to parent, parent componts should pass function
+pointers as values to props.
+  const MyComponent = (props) => {
+    return (
+      <div onClick={props.onClick}></div>
+    );
+  };
+
+  // somewhere in the parent component
+  const handleOnClick = (some data from the child component) => {
+    // do something with this data
+  };
+  <MyComponent onClick={handleOnClick} />
+  
+By default, React can render JSX code that has been placed into an array:
+  const MyComponent = (props) => {
+    return <li>props.item</li>;
+  };
+
+  const MyList = (props) => {
+    return (
+      <ul>
+        {
+          [
+            <MyComponent item={"hello"},
+            <MyComponent item={"world"},
+            <MyComponent item={12345}
+          ]
+        }
+      </ul>
+    );
+  };
+
+  * This allows us to use higher order functions like filter and map to
+    generate a list of components to be rendered dynamically.
+
+React can conditionally render content by using conditional expressions
+within JSX code:
+  const MyComponent = (props) => {
+    return (
+      <div>
+        {(some boolean expression) && <Foo /> }
+      </div>
+    );
+  };
+
+                      OR
+
+  const MyComponent = (props) => {
+    return (
+      <div>
+        {
+          (some boolean expression) ? <Foo /> : <Bar />
+        }
+      </div>
+    );
+  };
+
+*** React renders components in a separate component tree. To render components
+    into the actual DOM, we need to specify where in the actual HTML page:
+      ** inside index.html **
+      <html>
+        <head></head>
+        <body>
+          <div id="root"></div>
+        </body>
+      </html>
+
+      ** inside index.js **
+      import React from 'react';
+      import ReactDOM from 'react-dom/client';
+      import App from './App';
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+
+Components can be rendered in other locations of the DOM besides where they
+were actually declared in code. This can be done with portals:
+  ** inside index.html **
+  <html>
+    <head></head>
+    <body>
+      <div id="backdrop"></div>
+      <div id="root"></div>
+    </body>
+  </html>
+
+  ** inside MyComponent.js **
+  import ReactDOM from "react-dom";
+  import Backdrop from "./UI/Backdrop";
+
+  const MyComponent = (props) => {
+    return (
+      {
+        ReactDOM.createPortal(
+          <Backdrop />,
+          document.getElementById("backdrop")
+        )
+      }
+      <div>content</div>
+    );
+  }
+
+*** CSS files imported into components become globally available to our app.
+    To scope a CSS class to a specific component, import it as a module by
+    changing the name of the CSS file to FileName.module.css:
+    ** inside MyComponent.module.css **
+    .some-class {
+      background-color: green;
+    }
+
+    ** inside MyComponent.js **
+    import styles from "./MyComponent.module.css";
+    
+    const MyComponent = (props) => {
+      return <div className={styles['some-class']}></div>
+    };
+
+    Note: hyphenated names need to be accessed through quoted strings.
